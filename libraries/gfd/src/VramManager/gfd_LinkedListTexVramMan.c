@@ -15,6 +15,9 @@ typedef struct NNS_GfdLnkTexVramManager {
     NNSiGfdLnkVramMan mgr4x4;
     NNSiGfdLnkVramBlock * pBlockPoolList;
     u32 szByte;
+#ifdef LIBNTR_HAS_EXTENDED_TEXTURES
+    u32 szPhysicalByte;
+#endif
     u32 szByteFor4x4;
     NNSiGfdLnkVramBlock * pWorkHead;
     u32 szByteManagementWork;
@@ -50,7 +53,11 @@ static BOOL Dbg_IsInitializeSizeParamsValid_ (u32 szByte, u32 szByteFor4x4)
                 return (BOOL)(szByte >= szByteFor4x4 + GFD_SLOT_SIZE);
             }
         } else {
+#ifdef LIBNTR_HAS_EXTENDED_TEXTURES
+            return (BOOL)(szByte <= 4 * 1024 * 1024);
+#else
             return (BOOL)(szByte <= GFD_SLOT_SIZE * 4);
+#endif
         }
     } else {
         return FALSE;
@@ -117,13 +124,20 @@ void NNS_GfdInitLnkTexVramManager (u32 szByte, u32 szByteFor4x4, void * pManagem
 
     {
         mgr_.szByte = szByte;
+#ifdef LIBNTR_HAS_EXTENDED_TEXTURES
+        mgr_.szPhysicalByte = szByte < 0x80000 ? szByte : 0x80000;
+#endif
         mgr_.szByteFor4x4 = szByteFor4x4;
         mgr_.pWorkHead = pManagementWork;
         mgr_.szByteManagementWork = szByteManagementWork;
 
         NNS_GfdResetLnkTexVramState();
 
-        NNS_GFD_ASSERT(mgr_.szByte - (mgr_.szByteFor4x4 + mgr_.szByteFor4x4 / 2)
+        NNS_GFD_ASSERT(mgr_.szByte
+#ifdef LIBNTR_HAS_EXTENDED_TEXTURES
+                       - (mgr_.szByte > 0x80000 ? 128 : 0)
+#endif
+                       - (mgr_.szByteFor4x4 + mgr_.szByteFor4x4 / 2)
                        == Dbg_GetVramManTotalFreeBlockSize_(&mgr_.mgrNrm));
         NNS_GFD_ASSERT(mgr_.szByteFor4x4
                        == Dbg_GetVramManTotalFreeBlockSize_(&mgr_.mgr4x4));
@@ -134,6 +148,18 @@ void NNS_GfdInitLnkTexVramManager (u32 szByte, u32 szByteFor4x4, void * pManagem
         }
     }
 }
+
+#ifdef LIBNTR_HAS_EXTENDED_TEXTURES
+// Keep the physical range within the texture banks assigned by the caller.
+// Extra PC textures live in the simulator's separate extended backing store.
+void NNS_GfdInitLnkTexVramManagerEx(u32 szByte, u32 szPhysicalByte, u32 szByteFor4x4, void *pManagementWork, u32 szByteManagementWork, BOOL useAsDefault)
+{
+    NNS_GFD_ASSERT(szPhysicalByte <= 0x80000 && szPhysicalByte <= szByte);
+    NNS_GfdInitLnkTexVramManager(szByte, szByteFor4x4, pManagementWork, szByteManagementWork, useAsDefault);
+    mgr_.szPhysicalByte = szPhysicalByte;
+    NNS_GfdResetLnkTexVramState();
+}
+#endif
 
 NNSGfdTexKey NNS_GfdAllocLnkTexVram (u32 szByte, BOOL is4x4comp, u32 opt)
 {
@@ -202,7 +228,11 @@ void NNS_GfdResetLnkTexVramState (void)
 
     const u32 szIndexTbl = mgr_.szByteFor4x4 / 2;
 
+#ifdef LIBNTR_HAS_EXTENDED_TEXTURES
+    u32 restNrm = mgr_.szPhysicalByte - (mgr_.szByteFor4x4 + szIndexTbl);
+#else
     u32 restNrm = mgr_.szByte - (mgr_.szByteFor4x4 + szIndexTbl);
+#endif
 
     u32 rest4x4 = mgr_.szByteFor4x4;
     u32 slotNo;
@@ -264,6 +294,11 @@ void NNS_GfdResetLnkTexVramState (void)
             result &= InitSlotFreeBlock_(&mgr_.mgrNrm, &mgr_.pBlockPoolList, GFD_SLOT3_BASEADDR, sd[3].szNrm);
 
             result &= InitSlotFreeBlock_(&mgr_.mgrNrm, &mgr_.pBlockPoolList, GFD_SLOT1_BASEADDR + szIndexTbl, sd[1].szNrm);
+#ifdef LIBNTR_HAS_EXTENDED_TEXTURES
+            // A padding gap prevents a texture from crossing backing stores.
+            if (mgr_.szByte > 0x80080)
+                result &= InitSlotFreeBlock_(&mgr_.mgrNrm, &mgr_.pBlockPoolList, 0x80080, mgr_.szByte - 0x80080);
+#endif
         }
         NNS_GFD_ASSERT(result);
     }

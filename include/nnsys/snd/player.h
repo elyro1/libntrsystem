@@ -107,6 +107,10 @@ NNS_SND_INLINE BOOL NNS_SndHandleIsValid (const struct NNSSndHandle * handle)
 }
 
 void NNS_SndPlayerStopSeq(NNSSndHandle * handle, int fadeFrame);
+#ifdef SDK_PORT
+// Logical NNS player policy, applied whenever a runtime sequence player is allocated.
+void NNS_SndPlayerSetFastForward(int playerNo, BOOL enabled);
+#endif
 void NNS_SndPlayerStopSeqByPlayerNo(int playerNo, int fadeFrame);
 void NNS_SndPlayerStopSeqBySeqNo(int seqNo, int fadeFrame);
 void NNS_SndPlayerStopSeqBySeqArcNo(int seqArcNo, int fadeFrame);

@@ -1,3 +1,6 @@
+#ifdef LIBNTR_HAS_EXTENDED_TEXTURES
+#include <simulator/sim.h>
+#endif
 #include <nnsys/g3d/kernel.h>
 #include <nnsys/g3d/anm.h>
 #include <nnsys/g3d/binres/res_struct.h>
@@ -421,7 +424,7 @@ void NNS_G3dPlttLoad (NNSG3dResTex * pTex, BOOL exec_begin_end)
 
         sz = (u32)pTex->plttInfo.sizePltt << 3;
         pData = NNS_G3dGetPlttData(pTex);
-        from = NNS_GfdGetTexKeyAddr(pTex->plttInfo.vramKey);
+        from = NNS_GfdGetPlttKeyAddr(pTex->plttInfo.vramKey);
 
         GX_LoadTexPltt(pData, from, sz);
 
@@ -469,7 +472,11 @@ static void bindMdlTex_Internal_ (NNSG3dResMat * pMat, NNSG3dResDictTexToMatIdxD
 
         NNSG3dResMatData * matData = NNS_G3dGetMatDataByIdx(pMat, *(base + j));
 
+#ifdef LIBNTR_HAS_EXTENDED_TEXTURES
+        matData->texImageParam = SIM_EncodeTextureAddress(matData->texImageParam | pTexData->texImageParam, vramOffset << 3);
+#else
         matData->texImageParam |= (pTexData->texImageParam + vramOffset);
+#endif
         w = (s32)(((pTexData->extraParam) & NNS_G3D_TEXIMAGE_PARAMEX_ORIGW_MASK) >> NNS_G3D_TEXIMAGE_PARAMEX_ORIGW_SHIFT);
         h = (s32)(((pTexData->extraParam) & NNS_G3D_TEXIMAGE_PARAMEX_ORIGH_MASK) >> NNS_G3D_TEXIMAGE_PARAMEX_ORIGH_SHIFT);
 
@@ -629,7 +636,7 @@ static void bindMdlPltt_Internal_ (NNSG3dResMat * pMat, NNSG3dResDictPlttToMatId
 {
     u8 * base = (u8 *)pMat + pBindData->offset;
     u16 plttBase = pPlttData->offset;
-    u16 vramOffset = (u16)(NNS_GfdGetTexKeyAddr(pTex->plttInfo.vramKey) >> NNS_GFD_TEXKEY_ADDR_SHIFT);
+    u16 vramOffset = (u16)(NNS_GfdGetPlttKeyAddr(pTex->plttInfo.vramKey) >> NNS_GFD_TEXKEY_ADDR_SHIFT);
     u32 j;
 
     NNS_G3D_ASSERTMSG((pTex->plttInfo.vramKey != 0 || pTex->plttInfo.sizePltt == 0),

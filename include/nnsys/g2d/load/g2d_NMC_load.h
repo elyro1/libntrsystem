@@ -13,6 +13,9 @@ extern "C" {
 BOOL NNS_G2dGetUnpackedMultiCellBank(void * pNmcrFile, NNSG2dMultiCellDataBank ** ppMCBank);
 void NNS_G2dUnpackNMC(NNSG2dMultiCellDataBank * pMCellData);
 const NNSG2dMultiCellData * NNS_G2dGetMultiCellDataByIdx(const NNSG2dMultiCellDataBank * pDataBank, u16 idx);
+#ifdef SDK_PORT
+void WIN_CheckAndFreeMultiCellBank(void * start, void * end);
+#endif
 
 #ifdef __SNC__
     NNS_G2D_DEBUG_FUNC_DECL_BEGIN void NNS_G2dPrintNodeHierData (const NNSG2dMultiCellHierarchyData * p1) NNS_G2D_DEBUG_FUNC_DECL_END

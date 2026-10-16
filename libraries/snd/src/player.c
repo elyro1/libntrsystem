@@ -2,6 +2,9 @@
 
 #include <nitro/os.h>
 #include <nitro/snd.h>
+#ifdef SDK_PORT
+#include <simulator/sim_audio.h>
+#endif
 
 #include <nnsys/misc.h>
 #include <nnsys/snd/main.h>
@@ -17,6 +20,17 @@ typedef struct NNSSndPlayerHeap {
 
 static NNSSndSeqPlayer sSeqPlayer[ SND_PLAYER_NUM ];
 static NNSSndPlayer sPlayer[ NNS_SND_PLAYER_NUM ];
+#ifdef SDK_PORT
+static BOOL sPlayerFastForward[NNS_SND_PLAYER_NUM];
+
+void NNS_SndPlayerSetFastForward(int playerNo, BOOL enabled)
+{
+    NNS_MINMAX_ASSERT(playerNo, 0, NNS_SND_PLAYER_NO_MAX);
+    if (playerNo >= 0 && playerNo < NNS_SND_PLAYER_NUM) {
+        sPlayerFastForward[playerNo] = !!enabled;
+    }
+}
+#endif
 static NNSFndList sPrioList;
 static NNSFndList sFreeList;
 
@@ -633,6 +647,9 @@ void NNSi_SndPlayerInit (void)
 
     for (playerNo = 0; playerNo < NNS_SND_PLAYER_NUM; playerNo++) {
         player = &sPlayer[ playerNo ];
+#ifdef SDK_PORT
+        sPlayerFastForward[playerNo] = FALSE;
+#endif
 
         NNS_FND_INIT_LIST(&player->playerList, NNSSndSeqPlayer, playerLink);
         NNS_FND_INIT_LIST(&player->heapList, NNSSndPlayerHeap, link);
@@ -749,6 +766,10 @@ void NNSi_SndPlayerStartSeq (NNSSndSeqPlayer * seqPlayer, const void * seqDataBa
     player = seqPlayer->player;
     NNS_NULL_ASSERT(player);
 
+#ifdef LIBNTR_HAS_PLAYER_FAST_FORWARD
+    // Queue before prepare so ownership changes atomically with sound commands.
+    SIM_Audio_SetPlayerFastForward(seqPlayer->playerNo, sPlayerFastForward[player - sPlayer]);
+#endif
     SND_PrepareSeq(
         seqPlayer->playerNo,
         seqDataBase,

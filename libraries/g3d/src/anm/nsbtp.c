@@ -1,3 +1,6 @@
+#ifdef LIBNTR_HAS_EXTENDED_TEXTURES
+#include <simulator/sim.h>
+#endif
 #include <nnsys/g3d/anm/nsbtp.h>
 #include <nnsys/g3d/binres/res_struct_accessor.h>
 
@@ -50,7 +53,11 @@ static void SetTexParamaters_ (const NNSG3dResTex * pTex, const NNSG3dResName * 
             pResult->prmTexImage &= REG_G3_TEXIMAGE_PARAM_TGEN_MASK |
                                     REG_G3_TEXIMAGE_PARAM_FT_MASK | REG_G3_TEXIMAGE_PARAM_FS_MASK |
                                     REG_G3_TEXIMAGE_PARAM_RT_MASK | REG_G3_TEXIMAGE_PARAM_RS_MASK;
+#ifdef LIBNTR_HAS_EXTENDED_TEXTURES
+            pResult->prmTexImage = SIM_EncodeTextureAddress(pResult->prmTexImage | pData->texImageParam, vramOffset << 3);
+#else
             pResult->prmTexImage |= pData->texImageParam + vramOffset;
+#endif
 
             pResult->origWidth = (u16)((pData->extraParam & NNS_G3D_TEXIMAGE_PARAMEX_ORIGW_MASK) >>
                                        NNS_G3D_TEXIMAGE_PARAMEX_ORIGW_SHIFT);
@@ -84,7 +91,7 @@ static void SetPlttParamaters_ (const NNSG3dResTex * pTex, const NNSG3dResName *
 
         const NNSG3dResDictPlttData * pPlttData = NNS_G3dGetPlttDataByName(pTex, pPlttName);
         u16 plttBase = pPlttData->offset;
-        u16 vramOffset = (u16)(NNS_GfdGetTexKeyAddr(pTex->plttInfo.vramKey) >> NNS_GFD_TEXKEY_ADDR_SHIFT);
+        u16 vramOffset = (u16)(NNS_GfdGetPlttKeyAddr(pTex->plttInfo.vramKey) >> NNS_GFD_TEXKEY_ADDR_SHIFT);
 
         NNS_G3D_NULL_ASSERT(pPlttData);
 

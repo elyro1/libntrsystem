@@ -11,11 +11,21 @@ extern "C" {
 #define NNS_GFD_MASK_15BIT           0x7FFF
 #define NNS_GFD_MASK_16BIT           0xFFFF
 
+#ifdef LIBNTR_HAS_EXTENDED_TEXTURES
+#define NNS_GFD_TEXKEY_SIZE_SHIFT    7
+#define NNS_GFD_TEXKEY_SIZE_MASK     0xFFF
+#define NNS_GFD_TEXKEY_ADDR_MASK     0x7FFFF
+#define NNS_GFD_TEXKEY_SIZE_POS      19
+#else
 #define NNS_GFD_TEXKEY_SIZE_SHIFT    4
+#define NNS_GFD_TEXKEY_SIZE_MASK     0x7FFF
+#define NNS_GFD_TEXKEY_ADDR_MASK     0xFFFF
+#define NNS_GFD_TEXKEY_SIZE_POS      16
+#endif
 #define NNS_GFD_TEXKEY_ADDR_SHIFT    3
 
 #define NNS_GFD_TEXSIZE_MIN          (0x1 << NNS_GFD_TEXKEY_SIZE_SHIFT)
-#define NNS_GFD_TEXSIZE_MAX          (0x7FFF << NNS_GFD_TEXKEY_SIZE_SHIFT)
+#define NNS_GFD_TEXSIZE_MAX          (NNS_GFD_TEXKEY_SIZE_MASK << NNS_GFD_TEXKEY_SIZE_SHIFT)
 
 #define NNS_GFD_ALLOC_ERROR_TEXKEY   (u32)0x0
 
@@ -64,11 +74,11 @@ NNS_GFD_INLINE NNSGfdTexKey NNS_GfdMakeTexKey (u32 addr, u32 size, BOOL b4x4Comp
     SDK_ASSERT((addr & (u32)((0x1 << NNS_GFD_TEXKEY_ADDR_SHIFT) - 1)) == 0);
     SDK_ASSERT((size & (u32)((0x1 << NNS_GFD_TEXKEY_SIZE_SHIFT) - 1)) == 0);
 
-    SDK_ASSERT(((size >> NNS_GFD_TEXKEY_SIZE_SHIFT) & ~NNS_GFD_MASK_15BIT) == 0);
-    SDK_ASSERT(((addr >> NNS_GFD_TEXKEY_ADDR_SHIFT) & ~NNS_GFD_MASK_16BIT) == 0);
+    SDK_ASSERT(((size >> NNS_GFD_TEXKEY_SIZE_SHIFT) & ~NNS_GFD_TEXKEY_SIZE_MASK) == 0);
+    SDK_ASSERT(((addr >> NNS_GFD_TEXKEY_ADDR_SHIFT) & ~NNS_GFD_TEXKEY_ADDR_MASK) == 0);
 
-    return ((size >> NNS_GFD_TEXKEY_SIZE_SHIFT) << 16)
-           | ((NNS_GFD_MASK_16BIT & (addr >> NNS_GFD_TEXKEY_ADDR_SHIFT)))
+    return ((size >> NNS_GFD_TEXKEY_SIZE_SHIFT) << NNS_GFD_TEXKEY_SIZE_POS)
+           | ((NNS_GFD_TEXKEY_ADDR_MASK & (addr >> NNS_GFD_TEXKEY_ADDR_SHIFT)))
            | b4x4Comp << 31;
 }
 
@@ -77,7 +87,7 @@ static
 #endif
 NNS_GFD_INLINE u32 NNS_GfdGetTexKeyAddr (NNSGfdTexKey memKey)
 {
-    return (u32)(((0x0000FFFF & memKey)) << NNS_GFD_TEXKEY_ADDR_SHIFT);
+    return (u32)(((NNS_GFD_TEXKEY_ADDR_MASK & memKey)) << NNS_GFD_TEXKEY_ADDR_SHIFT);
 }
 
 #ifdef SDK_PORT
@@ -85,7 +95,7 @@ static
 #endif
 NNS_GFD_INLINE u32 NNS_GfdGetTexKeySize (NNSGfdTexKey memKey)
 {
-    return (u32)(((0x7FFF0000 & memKey) >> 16) << NNS_GFD_TEXKEY_SIZE_SHIFT);
+    return (u32)(((memKey >> NNS_GFD_TEXKEY_SIZE_POS) & NNS_GFD_TEXKEY_SIZE_MASK) << NNS_GFD_TEXKEY_SIZE_SHIFT);
 }
 
 #ifdef SDK_PORT

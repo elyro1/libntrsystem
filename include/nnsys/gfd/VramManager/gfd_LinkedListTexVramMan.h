@@ -15,6 +15,9 @@ void NNS_GfdDumpLnkTexVramManager(void);
 void NNS_GfdDumpLnkTexVramManagerEx(NNSGfdLnkDumpCallBack pFuncForNrm, NNSGfdLnkDumpCallBack pFuncFor4x4, void * pUserData);
 u32 NNS_GfdGetLnkTexVramManagerWorkSize(u32 numMemBlk);
 void NNS_GfdInitLnkTexVramManager(u32 szByte, u32 szByteFor4x4, void * pManagementWork, u32 szByteManagementWork, BOOL useAsDefault);
+#ifdef LIBNTR_HAS_EXTENDED_TEXTURES
+void NNS_GfdInitLnkTexVramManagerEx(u32 szByte, u32 szPhysicalByte, u32 szByteFor4x4, void *pManagementWork, u32 szByteManagementWork, BOOL useAsDefault);
+#endif
 NNSGfdTexKey NNS_GfdAllocLnkTexVram(u32 szByte, BOOL is4x4comp, u32 opt);
 int NNS_GfdFreeLnkTexVram(NNSGfdTexKey memKey);
 void NNS_GfdResetLnkTexVramState(void);

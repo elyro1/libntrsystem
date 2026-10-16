@@ -12,6 +12,7 @@
 #include <nnsys/g2d/load/g2d_NAN_load.h>
 #include <nnsys/g2d/load/g2d_NCE_load.h>
 #include <nnsys/g2d/load/g2d_NCG_load.h>
+#include <nnsys/g2d/load/g2d_NMC_load.h>
 #endif
 
 #define MBLOCK_FREE_SIGNATURE   ('FR')
@@ -749,6 +750,7 @@ void NNS_FndFreeToExpHeap (NNSFndHeapHandle heap, void * memBlock)
         WIN_CheckAndFreeAnimBank(region.start, region.end);
         WIN_CheckAndFreeCellBank(region.start, region.end);
         WIN_CheckAndFreeCharData(region.start, region.end);
+        WIN_CheckAndFreeMultiCellBank(region.start, region.end);
         #endif
         (void)RemoveMBlock(&pExpHeapHd->mbUsedList, pMBHead);
         (void)RecycleRegion(pExpHeapHd, &region);
